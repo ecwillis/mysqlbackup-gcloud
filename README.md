@@ -4,6 +4,8 @@ A simple docker container to backup a mysql db to google cloud storage.  Easy to
 
 ## Usage
 
+You must have a google cloud service key available to use. Place the key in a volume named key.json.
+
 ### Backup
 
 ```
