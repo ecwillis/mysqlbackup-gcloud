@@ -1,0 +1,44 @@
+#!/bin/bash
+
+PREFIX=${PREFIX:-backup}
+
+if [ -z "$BUCKET" ]; then
+  echo "BUCKET must be set"
+  exit 1
+fi
+
+if [ -z "$DB" ]; then
+  echo "DB must be set"
+  exit 1
+fi
+
+if [[ -z "$MYSQL_HOST" ]]; then
+  MYSQL_HOST="mysql"
+fi
+
+if [[ -n "$MYSQL_PORT_3306_TCP_ADDR" ]]; then
+  MYSQL_HOST=$MYSQL_PORT_3306_TCP_ADDR
+fi
+
+if [[ -n "$MYSQL_ENV_MYSQL_ROOT_PASSWORD" ]]; then
+  MYSQL_PASS=$MYSQL_ENV_MYSQL_ROOT_PASSWORD
+fi
+
+if [[ -z "$MYSQL_USER" ]]; then
+  MYSQL_USER=root
+fi
+
+if [ -z "$DATEFORMAT" ]; then
+  DATEFORMAT='%Y%m%d_%H%M%S'
+fi
+
+echo "Starting backup..."
+DATE=$(date +$DATEFORMAT)
+FILE="/backup/$PREFIX-$DB-$DATE.sql.gz"
+echo "Dumping to file $FILE"
+
+mysqldump --host $MYSQL_HOST --user $MYSQL_USER -p$MYSQL_PASS --add-drop-database --databases $DB | gzip > $FILE
+  
+gcloud auth activate-service-account --key-file /app/key.json
+  
+gsutil mv $FILE gs://$BUCKET
